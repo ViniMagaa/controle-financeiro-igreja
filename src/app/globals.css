@@ -2,19 +2,52 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #17171f;
+  --color-primary: var(--color-blue-500);
+  --color-primary-foreground: var(--color-blue-50);
+  --color-secondary: var(--color-slate-200);
+  --color-secondary-foreground: var(--color-slate-700);
+  --color-destructive: var(--color-red-500);
+  --color-destructive-foreground: var(--color-red-700);
+  --color-muted: var(--color-slate-200);
+  --color-muted-foreground: var(--color-slate-800);
+  --color-border: var(--color-slate-300);
+  --color-input: var(--color-slate-300);
+  --color-ring: var(--color-blue-500);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #17171f;
+    --foreground: #ededed;
+    --color-primary: var(--color-blue-400);
+    --color-primary-foreground: var(--color-blue-950);
+    --color-secondary: var(--color-slate-800);
+    --color-secondary-foreground: var(--color-slate-200);
+    --color-destructive: var(--color-red-400);
+    --color-destructive-foreground: var(--color-red-200);
+    --color-muted: var(--color-slate-800);
+    --color-muted-foreground: var(--color-slate-400);
+    --color-border: var(--color-slate-700);
+    --color-input: var(--color-slate-700);
+    --color-ring: var(--color-blue-400);
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-foreground: var(--color-secondary-foreground);
+  --color-destructive: var(--color-destructive);
+  --color-destructive-foreground: var(--color-destructive-foreground);
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-muted-foreground);
+  --color-border: var(--color-border);
+  --color-input: var(--color-input);
+  --color-ring: var(--color-ring);
 }
 
 body {
