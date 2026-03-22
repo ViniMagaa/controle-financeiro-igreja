@@ -6,7 +6,7 @@ import { FormField } from "@/components/ui/form-field";
 import { registerSchema, RegisterSchema } from "@/schemas/auth/register.schema";
 import { authService } from "@/services/auth.service";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -71,7 +71,7 @@ export default function RegisterPage() {
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? (
                   <>
-                    <Loader2 className="size-4 animate-spin" />
+                    <LoaderCircle className="size-4 animate-spin" />
                     Criando conta...
                   </>
                 ) : (

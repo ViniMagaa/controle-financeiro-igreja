@@ -28,19 +28,25 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // CRÍTICO: getUser() valida o token com o servidor Supabase
-  // getSession() lê apenas o cookie local — não é seguro para proteção de rotas
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicRoute = PUBLIC_ROUTES.some((route) =>
-    request.nextUrl.pathname.startsWith(route),
+  const isPublicRoute = PUBLIC_ROUTES.some(
+    (route) => request.nextUrl.pathname === route,
   );
 
+  // Usuário não autenticado tentando acessar rota privada → login
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Usuário autenticado tentando acessar login/register → dashboard
+  if (user && isPublicRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
