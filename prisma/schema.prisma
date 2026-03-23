@@ -38,7 +38,13 @@ model Transaction {
   category        Category        @relation(fields: [categoryId], references: [id])
   supplierId      String?         @map("supplier_id")
   supplier        Supplier?       @relation(fields: [supplierId], references: [id])
-  createdAt       DateTime        @default(now()) @map("created_at")
+
+  // Auto-relação para transações vinculadas
+  linkedTransactionId String?      @unique @map("linked_transaction_id")
+  linkedTransaction   Transaction? @relation("LinkedTransactions", fields: [linkedTransactionId], references: [id], onDelete: SetNull)
+  linkedBy            Transaction? @relation("LinkedTransactions")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("transactions")
 }
