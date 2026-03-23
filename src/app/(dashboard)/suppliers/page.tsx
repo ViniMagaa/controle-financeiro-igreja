@@ -3,63 +3,68 @@
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { FormField } from "@/components/ui/form-field";
-import { Category } from "@/generated/prisma/client";
 import { api } from "@/lib/api";
-import { categorySchema, CategorySchema } from "@/schemas/category.schema";
+import { supplierSchema, SupplierSchema } from "@/schemas/supplier.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoaderCircle, Trash } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
+type Supplier = { id: string; name: string };
+
+export default function SuppliersPage() {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const form = useForm<CategorySchema>({
-    resolver: zodResolver(categorySchema),
+  const form = useForm<SupplierSchema>({
+    resolver: zodResolver(supplierSchema),
   });
 
-  const fetchCategories = useCallback(async () => {
-    const { data, error } = await api.get<Category[]>("/api/categories");
+  const fetchSuppliers = useCallback(async () => {
+    const { data, error } = await api.get<Supplier[]>("/api/suppliers");
     if (error) {
       toast.error(error);
       return;
     }
-    setCategories(data ?? []);
+    setSuppliers(data ?? []);
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    async function fetch() {
-      fetchCategories();
-    }
-    fetch();
-  }, [fetchCategories]);
+    api.get<Supplier[]>("/api/suppliers").then(({ data, error }) => {
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      setSuppliers(data ?? []);
+      setLoading(false);
+    });
+  }, []);
 
-  async function onSubmit(data: CategorySchema) {
-    const { error } = await api.post("/api/categories", data);
+  async function onSubmit(data: SupplierSchema) {
+    const { error } = await api.post("/api/suppliers", data);
     if (error) {
       toast.error(error);
       return;
     }
-    toast.success("Categoria criada!");
+    toast.success("Fornecedor cadastrado!");
     form.reset();
-    fetchCategories();
+    await fetchSuppliers();
   }
 
   async function handleDelete(id: string, name: string) {
-    toast(`Remover categoria "${name}"?`, {
+    toast(`Remover fornecedor "${name}"?`, {
       action: {
         label: "Sim, remover",
         onClick: async () => {
-          const { error } = await api.delete(`/api/categories/${id}`);
+          const { error } = await api.delete(`/api/suppliers/${id}`);
           if (error) {
             toast.error(error);
             return;
           }
-          toast.success("Categoria removida!");
-          fetchCategories();
+          toast.success("Fornecedor removido!");
+          await fetchSuppliers();
         },
       },
     });
@@ -68,17 +73,19 @@ export default function CategoriesPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Categorias</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Fornecedores</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Centros de custo da obra (elétrica, alvenaria, acabamento...)
+          Empresas e pessoas que recebem pagamentos da obra
         </p>
       </div>
 
-      {/* Formulário de nova categoria */}
       <Form form={form} onSubmit={onSubmit}>
         <div className="mb-8 flex items-start gap-2">
           <div className="flex-1">
-            <FormField name="name" placeholder="Ex: Elétrica" />
+            <FormField
+              name="name"
+              placeholder="Ex: Depósito Construção Silva"
+            />
           </div>
           <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? (
@@ -92,26 +99,25 @@ export default function CategoriesPage() {
         </div>
       </Form>
 
-      {/* Lista de categorias */}
       {loading ? (
         <div className="flex justify-center py-8">
           <LoaderCircle className="text-muted-foreground size-5 animate-spin" />
         </div>
-      ) : categories.length === 0 ? (
+      ) : suppliers.length === 0 ? (
         <div className="border-border text-muted-foreground rounded-lg border p-8 text-center text-sm">
-          Nenhuma categoria cadastrada ainda.
+          Nenhum fornecedor cadastrado ainda.
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
-          {categories.map((category) => (
+          {suppliers.map((supplier) => (
             <li
-              key={category.id}
+              key={supplier.id}
               className="border-border flex items-center justify-between rounded-lg border px-4 py-3"
             >
-              <span className="text-sm font-medium">{category.name}</span>
+              <span className="text-sm font-medium">{supplier.name}</span>
               <Button
                 variant="destructive"
-                onClick={() => handleDelete(category.id, category.name)}
+                onClick={() => handleDelete(supplier.id, supplier.name)}
                 className="p-1.5!"
               >
                 <Trash className="size-4" />

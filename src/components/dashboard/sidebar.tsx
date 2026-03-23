@@ -2,13 +2,14 @@
 
 import { authService } from "@/services/auth.service";
 import {
-  LayoutDashboard,
   ArrowLeftRight,
-  Tag,
-  LogOut,
   ChevronLeft,
   ChevronRight,
   Church,
+  LayoutDashboard,
+  LogOut,
+  Tag,
+  Truck,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -19,6 +20,7 @@ const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transações", icon: ArrowLeftRight },
   { href: "/categories", label: "Categorias", icon: Tag },
+  { href: "/suppliers", label: "Fornecedores", icon: Truck },
 ];
 
 type SidebarProps = {

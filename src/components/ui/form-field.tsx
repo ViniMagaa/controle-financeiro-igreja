@@ -8,7 +8,7 @@ import { Label } from "./label";
 
 type FormFieldProps<T extends FieldValues> = {
   name: Path<T>;
-  label: string;
+  label?: string;
   type?: string;
   placeholder?: string;
   required?: boolean;
@@ -31,10 +31,12 @@ export function FormField<T extends FieldValues>({
 
   return (
     <div className="flex flex-col gap-1">
-      <Label htmlFor={name}>
-        {label}
-        {required && <span className="text-destructive ml-0.5">*</span>}
-      </Label>
+      {label && (
+        <Label htmlFor={name}>
+          {label}
+          {required && <span className="text-destructive ml-0.5">*</span>}
+        </Label>
+      )}
 
       <Input
         id={name}
