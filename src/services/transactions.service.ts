@@ -23,7 +23,7 @@ export const transactionsService = {
 
     return prisma.transaction.findMany({
       where,
-      include: { category: true },
+      include: { category: true, supplier: true },
       orderBy: { date: "desc" },
     });
   },
@@ -34,7 +34,7 @@ export const transactionsService = {
     amount: number;
     date: string;
     responsibleName: string;
-    supplierName?: string;
+    supplierId?: string;
     paymentMethod: PaymentMethod;
     categoryId: string;
   }) {
@@ -43,7 +43,7 @@ export const transactionsService = {
         ...data,
         date: new Date(data.date),
       },
-      include: { category: true },
+      include: { category: true, supplier: true },
     });
   },
 
