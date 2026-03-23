@@ -7,7 +7,7 @@ export const transactionSchema = z
     }),
     description: z.string().min(1, "Descrição é obrigatória"),
     amount: z
-      .number({ error: "Valor inválido" })
+      .number({ error: "Valor é obrigatório" })
       .positive("Valor deve ser maior que zero"),
     date: z.string().min(1, "Data é obrigatória"),
     responsibleName: z.string().min(1, "Responsável é obrigatório"),
@@ -24,9 +24,14 @@ export const transactionSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["supplierId"],
-        message: "Fornecedor é obrigatório para saídas",
+        message: "Fornecedor é obrigatório",
       });
     }
   });
 
+export const transactionFormSchema = transactionSchema.extend({
+  isDirectPayment: z.boolean().optional(),
+});
+
 export type TransactionSchema = z.infer<typeof transactionSchema>;
+export type TransactionFormSchema = z.infer<typeof transactionFormSchema>;

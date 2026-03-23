@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label";
 import { SelectField } from "@/components/ui/select-field";
 import { api } from "@/lib/api";
 import {
-  transactionSchema,
-  TransactionSchema,
+  transactionFormSchema,
+  TransactionFormSchema,
 } from "@/schemas/transaction.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
@@ -37,21 +37,24 @@ export default function NewTransactionPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
-  const form = useForm<TransactionSchema>({
-    resolver: zodResolver(transactionSchema),
+  const form = useForm<TransactionFormSchema>({
+    resolver: zodResolver(transactionFormSchema),
     defaultValues: {
       type: "expense",
       date: new Date().toISOString().split("T")[0],
+      isDirectPayment: false,
     },
   });
 
   const {
     register,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = form;
 
   const type = watch("type");
+  const isDirectPayment = watch("isDirectPayment") ?? false;
 
   useEffect(() => {
     api.get<Category[]>("/api/categories").then(({ data, error }) => {
@@ -70,18 +73,45 @@ export default function NewTransactionPage() {
     });
   }, []);
 
-  async function onSubmit(data: TransactionSchema) {
-    const { error } = await api.post("/api/transactions", {
-      ...data,
-      supplierId: data.supplierId || undefined,
-    });
+  // Ao ativar pagamento direto, força type para expense
+  function handleDirectPaymentToggle(checked: boolean) {
+    setValue("isDirectPayment", checked);
+    if (checked) setValue("type", "expense");
+  }
 
-    if (error) {
-      toast.error(error);
-      return;
+  async function onSubmit(data: TransactionFormSchema) {
+    const transaction = {
+      type: "expense",
+      description: data.description,
+      amount: data.amount,
+      date: data.date,
+      responsibleName: data.responsibleName,
+      paymentMethod: data.paymentMethod,
+      categoryId: data.categoryId,
+      supplierId: data.supplierId,
+    };
+    if (data.isDirectPayment) {
+      const { error } = await api.post("/api/transactions/linked", transaction);
+
+      if (error) {
+        toast.error(error);
+        return;
+      }
+    } else {
+      const { error } = await api.post("/api/transactions", {
+        ...data,
+        supplierId: data.supplierId || undefined,
+      });
+
+      if (error) {
+        toast.error(error);
+        return;
+      }
     }
 
-    toast.success("Transação registrada!");
+    toast.success(
+      isDirectPayment ? "Transações registradas!" : "Transação registrada!",
+    );
     router.push("/transactions");
   }
 
@@ -113,33 +143,62 @@ export default function NewTransactionPage() {
 
       <Form form={form} onSubmit={onSubmit}>
         <div className="flex flex-col gap-4">
-          {/* Tipo: entrada ou saída */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Tipo</Label>
-            <div className="flex gap-2">
-              {(["expense", "income"] as const).map((t) => (
-                <label
-                  key={t}
-                  className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm transition ${
-                    type === t
-                      ? t === "income"
-                        ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
-                        : "border-red-500 bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400"
-                      : "border-border hover:bg-muted/50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    value={t}
-                    className="sr-only"
-                    {...register("type")}
-                  />
-                  {t === "income" ? "Entrada (doação)" : "Saída (pagamento)"}
-                </label>
-              ))}
+          {/* Toggle pagamento direto */}
+          <label
+            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition ${
+              isDirectPayment
+                ? "border-primary/50 bg-primary/5"
+                : "border-border hover:bg-muted/40"
+            } `}
+          >
+            <input
+              type="checkbox"
+              className="accent-primary mt-0.5"
+              checked={isDirectPayment}
+              onChange={(e) => handleDirectPaymentToggle(e.target.checked)}
+            />
+            <div>
+              <p className="text-sm font-medium">
+                Pagamento direto ao fornecedor
+              </p>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                Registra entrada e saída juntas quando alguém paga diretamente
+                ao fornecedor.
+              </p>
             </div>
-            <FormError message={errors.type?.message} />
-          </div>
+          </label>
+
+          {/* Tipo — oculto quando pagamento direto */}
+          {!isDirectPayment && (
+            <div className="flex flex-col gap-1.5">
+              <Label>
+                Tipo <span className="text-destructive ml-0.5">*</span>
+              </Label>
+              <div className="flex gap-2">
+                {(["expense", "income"] as const).map((t) => (
+                  <label
+                    key={t}
+                    className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm transition ${
+                      type === t
+                        ? t === "income"
+                          ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
+                          : "border-red-500 bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400"
+                        : "border-border hover:bg-muted/50"
+                    } `}
+                  >
+                    <input
+                      type="radio"
+                      value={t}
+                      className="sr-only"
+                      {...register("type")}
+                    />
+                    {t === "income" ? "Entrada" : "Saída"}
+                  </label>
+                ))}
+              </div>
+              <FormError message={errors.type?.message} />
+            </div>
+          )}
 
           {/* Descrição */}
           <FormField
@@ -163,8 +222,19 @@ export default function NewTransactionPage() {
             required
           />
 
-          {/* Fornecedor — só aparece em saídas */}
-          {type === "expense" && (
+          {/* Categoria */}
+          <ComboboxField
+            name="categoryId"
+            label="Categoria"
+            options={categoryOptions}
+            placeholder="Selecione uma categoria..."
+            searchPlaceholder="Buscar categoria..."
+            emptyMessage="Nenhuma categoria encontrada."
+            required
+          />
+
+          {/* Fornecedor — saída ou pagamento direto */}
+          {(type === "expense" || isDirectPayment) && (
             <ComboboxField
               name="supplierId"
               label="Fornecedor"
@@ -184,22 +254,13 @@ export default function NewTransactionPage() {
             required
           />
 
-          {/* Categoria */}
-          <ComboboxField
-            name="categoryId"
-            label="Categoria"
-            options={categoryOptions}
-            placeholder="Selecione uma categoria..."
-            searchPlaceholder="Buscar categoria..."
-            emptyMessage="Nenhuma categoria encontrada."
-            required
-          />
-
           <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
             {isSubmitting ? (
               <>
                 <LoaderCircle className="size-4 animate-spin" /> Salvando...
               </>
+            ) : isDirectPayment ? (
+              "Registrar entrada e saída"
             ) : (
               "Registrar transação"
             )}
