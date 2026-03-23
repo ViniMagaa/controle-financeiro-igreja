@@ -1,14 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { CurrencyField } from "@/components/ui/currency-field";
 import { Form } from "@/components/ui/form";
 import { FormError } from "@/components/ui/form-error";
 import { FormField } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import {
-  transactionFormSchema,
-  TransactionFormSchema,
+  transactionSchema,
+  TransactionSchema,
 } from "@/schemas/transaction.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
@@ -32,8 +33,8 @@ export default function NewTransactionPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
 
-  const form = useForm<TransactionFormSchema>({
-    resolver: zodResolver(transactionFormSchema),
+  const form = useForm<TransactionSchema>({
+    resolver: zodResolver(transactionSchema),
     defaultValues: {
       type: "expense",
       date: new Date().toISOString().split("T")[0],
@@ -58,7 +59,7 @@ export default function NewTransactionPage() {
     });
   }, []);
 
-  async function onSubmit(data: TransactionFormSchema) {
+  async function onSubmit(data: TransactionSchema) {
     const { error } = await api.post("/api/transactions", data);
 
     if (error) {
@@ -121,21 +122,19 @@ export default function NewTransactionPage() {
             name="description"
             label="Descrição do material ou serviço"
             placeholder="Ex: Cimento 50kg, Mão de obra elétrica..."
+            required
           />
 
           <div className="grid grid-cols-2 gap-4">
-            <FormField
-              name="amount"
-              label="Valor (R$)"
-              placeholder="Ex: 850,00"
-            />
-            <FormField name="date" label="Data" type="date" />
+            <CurrencyField name="amount" label="Valor" required />
+            <FormField name="date" label="Data" type="date" required />
           </div>
 
           <FormField
             name="responsibleName"
             label="Nome do responsável"
             placeholder="Quem realizou o pagamento ou doação"
+            required
           />
 
           {/* Fornecedor — só aparece em saídas */}
@@ -154,6 +153,7 @@ export default function NewTransactionPage() {
               id="paymentMethod"
               className="border-border bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
               {...register("paymentMethod")}
+              required
             >
               <option value="">Selecione...</option>
               {Object.entries(paymentMethodLabels).map(([value, label]) => (
@@ -172,6 +172,7 @@ export default function NewTransactionPage() {
               id="categoryId"
               className="border-border bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
               {...register("categoryId")}
+              required
             >
               <option value="">Selecione...</option>
               {categories.map((cat) => (
