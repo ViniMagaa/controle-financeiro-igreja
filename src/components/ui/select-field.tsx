@@ -1,26 +1,26 @@
 "use client";
 
-import { getErrorMessage } from "@/utils/get-error-message";
 import { FieldValues, Path, useFormContext } from "react-hook-form";
-import { FormError } from "./form-error";
-import { Input } from "./input";
+import { Select } from "./select";
 import { Label } from "./label";
+import { FormError } from "./form-error";
+import { getErrorMessage } from "@/utils/get-error-message";
 
-type FormFieldProps<T extends FieldValues> = {
+type SelectFieldProps<T extends FieldValues> = {
   name: Path<T>;
   label: string;
-  type?: string;
   placeholder?: string;
+  options: { value: string; label: string }[];
   required?: boolean;
 };
 
-export function FormField<T extends FieldValues>({
+export function SelectField<T extends FieldValues>({
   name,
   label,
-  type = "text",
   placeholder,
+  options,
   required,
-}: FormFieldProps<T>) {
+}: SelectFieldProps<T>) {
   const {
     register,
     formState: { errors },
@@ -36,11 +36,11 @@ export function FormField<T extends FieldValues>({
         {required && <span className="text-destructive ml-0.5">*</span>}
       </Label>
 
-      <Input
+      <Select
         id={name}
-        type={type}
-        placeholder={placeholder}
         error={!!message}
+        placeholder={placeholder ?? "Selecione..."}
+        options={options}
         {...register(name)}
       />
 
