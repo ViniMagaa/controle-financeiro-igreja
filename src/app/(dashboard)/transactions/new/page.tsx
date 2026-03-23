@@ -1,11 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ComboboxField } from "@/components/ui/combobox-field";
 import { CurrencyField } from "@/components/ui/currency-field";
 import { Form } from "@/components/ui/form";
 import { FormError } from "@/components/ui/form-error";
 import { FormField } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
+import { SelectField } from "@/components/ui/select-field";
 import { api } from "@/lib/api";
 import {
   transactionSchema,
@@ -20,18 +22,20 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 type Category = { id: string; name: string };
+type Supplier = { id: string; name: string };
 
-const paymentMethodLabels = {
-  pix: "PIX",
-  cash: "Dinheiro",
-  card: "Cartão",
-  boleto: "Boleto",
-  transfer: "Transferência",
-};
+const paymentMethodOptions = [
+  { value: "pix", label: "PIX" },
+  { value: "cash", label: "Dinheiro" },
+  { value: "card", label: "Cartão" },
+  { value: "boleto", label: "Boleto" },
+  { value: "transfer", label: "Transferência" },
+];
 
 export default function NewTransactionPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
   const form = useForm<TransactionSchema>({
     resolver: zodResolver(transactionSchema),
@@ -57,10 +61,20 @@ export default function NewTransactionPage() {
       }
       setCategories(data ?? []);
     });
+    api.get<Supplier[]>("/api/suppliers").then(({ data, error }) => {
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      setSuppliers(data ?? []);
+    });
   }, []);
 
   async function onSubmit(data: TransactionSchema) {
-    const { error } = await api.post("/api/transactions", data);
+    const { error } = await api.post("/api/transactions", {
+      ...data,
+      supplierId: data.supplierId || undefined,
+    });
 
     if (error) {
       toast.error(error);
@@ -70,6 +84,15 @@ export default function NewTransactionPage() {
     toast.success("Transação registrada!");
     router.push("/transactions");
   }
+
+  const categoryOptions = categories.map((c) => ({
+    value: c.id,
+    label: c.name,
+  }));
+  const supplierOptions = suppliers.map((s) => ({
+    value: s.id,
+    label: s.name,
+  }));
 
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-8">
@@ -118,6 +141,7 @@ export default function NewTransactionPage() {
             <FormError message={errors.type?.message} />
           </div>
 
+          {/* Descrição */}
           <FormField
             name="description"
             label="Descrição do material ou serviço"
@@ -125,11 +149,13 @@ export default function NewTransactionPage() {
             required
           />
 
+          {/* Valor e Data */}
           <div className="grid grid-cols-2 gap-4">
             <CurrencyField name="amount" label="Valor" required />
             <FormField name="date" label="Data" type="date" required />
           </div>
 
+          {/* Responsável */}
           <FormField
             name="responsibleName"
             label="Nome do responsável"
@@ -139,61 +165,35 @@ export default function NewTransactionPage() {
 
           {/* Fornecedor — só aparece em saídas */}
           {type === "expense" && (
-            <FormField
-              name="supplierName"
-              label="Nome do fornecedor"
-              placeholder="Ex: Depósito Construção Silva"
+            <ComboboxField
+              name="supplierId"
+              label="Fornecedor"
+              options={supplierOptions}
+              placeholder="Selecione um fornecedor..."
+              searchPlaceholder="Buscar fornecedor..."
+              emptyMessage="Nenhum fornecedor encontrado."
+              required
             />
           )}
 
           {/* Forma de pagamento */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="paymentMethod">Forma de pagamento</Label>
-            <select
-              id="paymentMethod"
-              className="border-border bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
-              {...register("paymentMethod")}
-              required
-            >
-              <option value="">Selecione...</option>
-              {Object.entries(paymentMethodLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <FormError message={errors.paymentMethod?.message} />
-          </div>
+          <SelectField
+            name="paymentMethod"
+            label="Forma de pagamento"
+            options={paymentMethodOptions}
+            required
+          />
 
           {/* Categoria */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="categoryId">Categoria</Label>
-            <select
-              id="categoryId"
-              className="border-border bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2"
-              {...register("categoryId")}
-              required
-            >
-              <option value="">Selecione...</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            <FormError message={errors.categoryId?.message} />
-            {categories.length === 0 && (
-              <p className="text-muted-foreground text-xs">
-                Nenhuma categoria cadastrada.{" "}
-                <Link
-                  href="/categories"
-                  className="text-primary hover:underline"
-                >
-                  Criar categoria
-                </Link>
-              </p>
-            )}
-          </div>
+          <ComboboxField
+            name="categoryId"
+            label="Categoria"
+            options={categoryOptions}
+            placeholder="Selecione uma categoria..."
+            searchPlaceholder="Buscar categoria..."
+            emptyMessage="Nenhuma categoria encontrada."
+            required
+          />
 
           <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
             {isSubmitting ? (
