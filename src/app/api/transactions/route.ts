@@ -23,6 +23,7 @@ export async function GET(req: Request) {
     const filters = {
       type: searchParams.get("type") as TransactionType | undefined,
       categoryId: searchParams.get("categoryId") ?? undefined,
+      supplierId: searchParams.get("supplierId") ?? undefined,
       month: searchParams.get("month")
         ? Number(searchParams.get("month"))
         : undefined,
@@ -33,7 +34,8 @@ export async function GET(req: Request) {
 
     const transactions = await transactionsService.list(filters);
     return NextResponse.json(transactions);
-  } catch {
+  } catch (error) {
+    console.log(error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

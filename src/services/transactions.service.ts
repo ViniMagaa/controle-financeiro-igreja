@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 export type TransactionFilters = {
   type?: TransactionType;
   categoryId?: string;
+  supplierId?: string;
   month?: number;
   year?: number;
 };
@@ -23,12 +24,25 @@ export const transactionsService = {
   async list(filters: TransactionFilters = {}) {
     const where: Record<string, unknown> = {};
 
-    if (filters.type) where.type = filters.type;
+    if (filters.type) {
+      where.OR = [
+        { type: filters.type },
+        { linkedBy: { type: filters.type } },
+        { linkedTransaction: { type: filters.type } },
+      ];
+    }
     if (filters.categoryId) where.categoryId = filters.categoryId;
+    if (filters.supplierId) where.supplierId = filters.supplierId;
 
     if (filters.month && filters.year) {
       const start = new Date(filters.year, filters.month - 1, 1);
       const end = new Date(filters.year, filters.month, 1);
+      where.date = { gte: start, lt: end };
+    }
+
+    if (!filters.month && filters.year) {
+      const start = new Date(filters.year, 0 - 1, 1);
+      const end = new Date(filters.year, 11, 1);
       where.date = { gte: start, lt: end };
     }
 
