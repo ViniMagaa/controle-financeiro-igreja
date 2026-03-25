@@ -100,6 +100,63 @@ export const transactionsService = {
     });
   },
 
+  async getFileUrls(id: string): Promise<string[]> {
+    // Primeiro busca a transação para descobrir o par vinculado
+    const transaction = await prisma.transaction.findUnique({
+      where: { id },
+      select: {
+        attachmentUrl: true,
+        invoiceUrl: true,
+        linkedTransactionId: true,
+        linkedBy: { select: { id: true } },
+      },
+    });
+
+    if (!transaction) return [];
+
+    const urls: string[] = [];
+
+    console.log(transaction);
+
+    // URLs da transação principal
+    if (transaction.attachmentUrl) urls.push(transaction.attachmentUrl);
+    if (transaction.invoiceUrl) urls.push(transaction.invoiceUrl);
+
+    // ID do par vinculado (pode estar em linkedTransactionId ou linkedBy)
+    const linkedId =
+      transaction.linkedTransactionId ?? transaction.linkedBy?.id;
+
+    if (linkedId) {
+      const linked = await prisma.transaction.findUnique({
+        where: { id: linkedId },
+        select: { attachmentUrl: true, invoiceUrl: true },
+      });
+      if (linked?.attachmentUrl) urls.push(linked.attachmentUrl);
+      if (linked?.invoiceUrl) urls.push(linked.invoiceUrl);
+    }
+
+    return urls;
+  },
+
+  async getSummary(month: number, year: number) {
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 1);
+
+    const transactions = await prisma.transaction.findMany({
+      where: { date: { gte: start, lt: end } },
+    });
+
+    const income = transactions
+      .filter((t) => t.type === "income")
+      .reduce((acc, t) => acc + Number(t.amount), 0);
+
+    const expense = transactions
+      .filter((t) => t.type === "expense")
+      .reduce((acc, t) => acc + Number(t.amount), 0);
+
+    return { income, expense, balance: income - expense };
+  },
+
   async delete(id: string) {
     return prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.findUnique({
@@ -128,24 +185,5 @@ export const transactionsService = {
         await tx.transaction.delete({ where: { id } });
       }
     });
-  },
-
-  async getSummary(month: number, year: number) {
-    const start = new Date(year, month - 1, 1);
-    const end = new Date(year, month, 1);
-
-    const transactions = await prisma.transaction.findMany({
-      where: { date: { gte: start, lt: end } },
-    });
-
-    const income = transactions
-      .filter((t) => t.type === "income")
-      .reduce((acc, t) => acc + Number(t.amount), 0);
-
-    const expense = transactions
-      .filter((t) => t.type === "expense")
-      .reduce((acc, t) => acc + Number(t.amount), 0);
-
-    return { income, expense, balance: income - expense };
   },
 };

@@ -3,12 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { ComboboxField } from "@/components/ui/combobox-field";
 import { CurrencyField } from "@/components/ui/currency-field";
+import { FileUploadField } from "@/components/ui/file-upload-field";
 import { Form } from "@/components/ui/form";
 import { FormError } from "@/components/ui/form-error";
 import { FormField } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
 import { SelectField } from "@/components/ui/select-field";
 import { api } from "@/lib/api";
+import { uploadFile } from "@/lib/supabase/storage.client";
 import {
   transactionFormSchema,
   TransactionFormSchema,
@@ -20,8 +22,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { FileUploadField } from "@/components/ui/file-upload-field";
-import { uploadFile } from "@/lib/supabase/storage";
 
 type Category = { id: string; name: string };
 type Supplier = { id: string; name: string };
@@ -90,6 +90,7 @@ export default function NewTransactionPage() {
       const { url, error } = await uploadFile(
         data.attachmentFile,
         "attachments",
+        "attachments",
       );
       if (error) {
         toast.error(`Erro ao enviar comprovante: ${error}`);
@@ -99,7 +100,11 @@ export default function NewTransactionPage() {
     }
 
     if (data.invoiceFile) {
-      const { url, error } = await uploadFile(data.invoiceFile, "invoices");
+      const { url, error } = await uploadFile(
+        data.invoiceFile,
+        "attachments",
+        "invoices",
+      );
       if (error) {
         toast.error(`Erro ao enviar nota fiscal: ${error}`);
         return;
@@ -118,17 +123,12 @@ export default function NewTransactionPage() {
 
     if (data.isDirectPayment) {
       const { error } = await api.post("/api/transactions/linked", payload);
-
       if (error) {
         toast.error(error);
         return;
       }
     } else {
-      const { error } = await api.post("/api/transactions", {
-        ...data,
-        supplierId: data.supplierId || undefined,
-      });
-
+      const { error } = await api.post("/api/transactions", payload);
       if (error) {
         toast.error(error);
         return;
