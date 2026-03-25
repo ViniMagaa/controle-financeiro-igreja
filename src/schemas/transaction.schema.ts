@@ -18,6 +18,8 @@ export const transactionSchema = z
     categoryId: z
       .string("Categoria é obrigatória")
       .min(1, "Categoria é obrigatória"),
+    attachmentUrl: z.url().optional().nullable(),
+    invoiceUrl: z.url().optional().nullable(),
   })
   .superRefine((data, ctx) => {
     if (data.type === "expense" && !data.supplierId) {
@@ -31,6 +33,8 @@ export const transactionSchema = z
 
 export const transactionFormSchema = transactionSchema.extend({
   isDirectPayment: z.boolean().optional(),
+  attachmentFile: z.instanceof(File).optional().nullable(),
+  invoiceFile: z.instanceof(File).optional().nullable(),
 });
 
 export type TransactionSchema = z.infer<typeof transactionSchema>;

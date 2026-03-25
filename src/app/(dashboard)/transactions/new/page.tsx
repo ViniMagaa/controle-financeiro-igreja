@@ -20,6 +20,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { FileUploadField } from "@/components/ui/file-upload-field";
+import { uploadFile } from "@/lib/supabase/storage";
 
 type Category = { id: string; name: string };
 type Supplier = { id: string; name: string };
@@ -80,18 +82,42 @@ export default function NewTransactionPage() {
   }
 
   async function onSubmit(data: TransactionFormSchema) {
-    const transaction = {
-      type: "expense",
-      description: data.description,
-      amount: data.amount,
-      date: data.date,
-      responsibleName: data.responsibleName,
-      paymentMethod: data.paymentMethod,
-      categoryId: data.categoryId,
-      supplierId: data.supplierId,
+    // Faz upload dos arquivos antes de salvar
+    let attachmentUrl: string | undefined;
+    let invoiceUrl: string | undefined;
+
+    if (data.attachmentFile) {
+      const { url, error } = await uploadFile(
+        data.attachmentFile,
+        "attachments",
+      );
+      if (error) {
+        toast.error(`Erro ao enviar comprovante: ${error}`);
+        return;
+      }
+      attachmentUrl = url ?? undefined;
+    }
+
+    if (data.invoiceFile) {
+      const { url, error } = await uploadFile(data.invoiceFile, "invoices");
+      if (error) {
+        toast.error(`Erro ao enviar nota fiscal: ${error}`);
+        return;
+      }
+      invoiceUrl = url ?? undefined;
+    }
+
+    const payload = {
+      ...data,
+      attachmentUrl,
+      invoiceUrl,
+      supplierId: data.supplierId || undefined,
+      attachmentFile: undefined,
+      invoiceFile: undefined,
     };
+
     if (data.isDirectPayment) {
-      const { error } = await api.post("/api/transactions/linked", transaction);
+      const { error } = await api.post("/api/transactions/linked", payload);
 
       if (error) {
         toast.error(error);
@@ -253,6 +279,12 @@ export default function NewTransactionPage() {
             options={paymentMethodOptions}
             required
           />
+
+          {/* Comprovante e Nota Fiscal */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <FileUploadField name="attachmentFile" label="Comprovante" />
+            <FileUploadField name="invoiceFile" label="Nota fiscal" />
+          </div>
 
           <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
             {isSubmitting ? (

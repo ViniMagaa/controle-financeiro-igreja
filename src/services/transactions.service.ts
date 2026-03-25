@@ -18,6 +18,8 @@ type CreateTransactionData = {
   supplierId?: string;
   paymentMethod: PaymentMethod;
   categoryId: string;
+  attachmentUrl?: string | null;
+  invoiceUrl?: string | null;
 };
 
 export const transactionsService = {

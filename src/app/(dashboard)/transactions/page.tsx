@@ -252,14 +252,18 @@ export default function TransactionsPage() {
         ))}
       </div>
 
-      {visibleTransactions.length <= 0 ? (
-        <div className="border-border text-muted-foreground rounded-lg border p-8 text-center text-sm">
-          Nenhuma transação encontrada para os filtros selecionados.
-        </div>
-      ) : (
-        <h2 className="font-medium">
-          Exibindo {visibleTransactions.length} transações
-        </h2>
+      {!loading && (
+        <>
+          {visibleTransactions.length <= 0 ? (
+            <div className="border-border text-muted-foreground rounded-lg border p-8 text-center text-sm">
+              Nenhuma transação encontrada para os filtros selecionados.
+            </div>
+          ) : (
+            <h2 className="font-medium">
+              Exibindo {visibleTransactions.length} transações
+            </h2>
+          )}
+        </>
       )}
       {/* Lista */}
       {loading ? (
