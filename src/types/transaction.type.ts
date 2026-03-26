@@ -13,6 +13,8 @@ export type Transaction = {
   linkedTransactionId: string | null;
   linkedTransaction: LinkedSide | null;
   linkedBy: LinkedSide | null;
+  attachmentUrl: string | null;
+  invoiceUrl: string | null;
 };
 
 export type LinkedSide = {

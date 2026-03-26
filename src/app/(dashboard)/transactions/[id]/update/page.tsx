@@ -13,69 +13,85 @@ import { Category, Supplier } from "@/generated/prisma/client";
 import { api } from "@/lib/api";
 import { uploadFile } from "@/lib/supabase/storage.client";
 import {
-  transactionFormSchema,
   TransactionFormSchema,
+  transactionFormSchema,
 } from "@/schemas/transaction.schema";
+import { Transaction } from "@/types/transaction.type";
 import { paymentMethodOptions } from "@/utils/payment-method";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, LoaderCircle } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, LoaderCircle } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-export default function NewTransactionPage() {
+export default function UpdateTransactionPage() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
+
+  const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const form = useForm<TransactionFormSchema>({
     resolver: zodResolver(transactionFormSchema),
-    defaultValues: {
-      type: "expense",
-      date: new Date().toISOString().split("T")[0],
-      isDirectPayment: false,
-    },
   });
 
   const {
     register,
     watch,
+    reset,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = form;
 
   const type = watch("type");
-  const isDirectPayment = watch("isDirectPayment") ?? false;
+  const isLinked = !!transaction?.linkedBy;
 
   useEffect(() => {
-    api.get<Category[]>("/api/categories").then(({ data, error }) => {
-      if (error) {
-        toast.error(error);
+    Promise.all([
+      api.get<Transaction>(`/api/transactions/${id}`),
+      api.get<Category[]>("/api/categories"),
+      api.get<Supplier[]>("/api/suppliers"),
+    ]).then(([txRes, catRes, supRes]) => {
+      if (txRes.error) {
+        toast.error(txRes.error);
         return;
       }
-      setCategories(data ?? []);
-    });
-    api.get<Supplier[]>("/api/suppliers").then(({ data, error }) => {
-      if (error) {
-        toast.error(error);
-        return;
-      }
-      setSuppliers(data ?? []);
-    });
-  }, []);
 
-  // Ao ativar pagamento direto, força type para expense
-  function handleDirectPaymentToggle(checked: boolean) {
-    setValue("isDirectPayment", checked);
-    if (checked) setValue("type", "expense");
-  }
+      const t = txRes.data!;
+      setTransaction(t);
+      setCategories(catRes.data ?? []);
+      setSuppliers(supRes.data ?? []);
+
+      reset({
+        type: t.type,
+        description: t.description,
+        amount: Number(t.amount),
+        date: t.date.split("T")[0],
+        responsibleName: t.responsibleName,
+        supplierId: t.supplier?.id ?? undefined,
+        paymentMethod: t.paymentMethod,
+        categoryId: t.category.id,
+      });
+
+      setLoading(false);
+    });
+  }, [id, reset]);
+
+  // useEffect(() => {
+  //   if (type === "income") {
+  //     setValue("supplierId", "");
+  //   }
+  // }, [type, setValue]);
 
   async function onSubmit(data: TransactionFormSchema) {
-    // Faz upload dos arquivos antes de salvar
-    let attachmentUrl: string | undefined;
-    let invoiceUrl: string | undefined;
+    let attachmentUrl = transaction?.attachmentUrl ?? null;
+    let invoiceUrl = transaction?.invoiceUrl ?? null;
+    let previousAttachmentUrl: string | null = null;
+    let previousInvoiceUrl: string | null = null;
 
     if (data.attachmentFile) {
       const { url, error } = await uploadFile(
@@ -87,7 +103,8 @@ export default function NewTransactionPage() {
         toast.error(`Erro ao enviar comprovante: ${error}`);
         return;
       }
-      attachmentUrl = url ?? undefined;
+      previousAttachmentUrl = transaction?.attachmentUrl ?? null;
+      attachmentUrl = url;
     }
 
     if (data.invoiceFile) {
@@ -100,35 +117,29 @@ export default function NewTransactionPage() {
         toast.error(`Erro ao enviar nota fiscal: ${error}`);
         return;
       }
-      invoiceUrl = url ?? undefined;
+      previousInvoiceUrl = transaction?.invoiceUrl ?? null;
+      invoiceUrl = url;
     }
 
     const payload = {
       ...data,
+
       attachmentUrl,
       invoiceUrl,
-      supplierId: data.type === "expense" ? data.supplierId : undefined,
+      previousAttachmentUrl,
+      previousInvoiceUrl,
       attachmentFile: undefined,
       invoiceFile: undefined,
     };
 
-    if (data.isDirectPayment) {
-      const { error } = await api.post("/api/transactions/linked", payload);
-      if (error) {
-        toast.error(error);
-        return;
-      }
-    } else {
-      const { error } = await api.post("/api/transactions", payload);
-      if (error) {
-        toast.error(error);
-        return;
-      }
+    const { error } = await api.patch(`/api/transactions/${id}`, payload);
+
+    if (error) {
+      toast.error(error);
+      return;
     }
 
-    toast.success(
-      isDirectPayment ? "Transações registradas!" : "Transação registrada!",
-    );
+    toast.success("Transação atualizada!");
     router.push("/transactions");
   }
 
@@ -141,6 +152,14 @@ export default function NewTransactionPage() {
     label: s.name,
   }));
 
+  if (loading) {
+    return (
+      <main className="flex min-h-[60vh] items-center justify-center">
+        <LoaderCircle className="text-muted-foreground size-5 animate-spin" />
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-8">
       <div className="mb-8">
@@ -151,42 +170,25 @@ export default function NewTransactionPage() {
           <ArrowLeft className="size-3.5" /> Voltar
         </Link>
         <h1 className="text-2xl font-semibold tracking-tight">
-          Nova transação
+          Editar transação
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Registre uma entrada ou saída financeira
+          Atualize os dados da transação
         </p>
       </div>
 
       <Form form={form} onSubmit={onSubmit}>
         <div className="flex flex-col gap-4">
-          {/* Toggle pagamento direto */}
-          <label
-            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition ${
-              isDirectPayment
-                ? "border-primary/50 bg-primary/5"
-                : "border-border hover:bg-muted/40"
-            } `}
-          >
-            <input
-              type="checkbox"
-              className="accent-primary mt-0.5"
-              checked={isDirectPayment}
-              onChange={(e) => handleDirectPaymentToggle(e.target.checked)}
-            />
-            <div>
-              <p className="text-sm font-medium">
-                Pagamento direto ao fornecedor
-              </p>
-              <p className="text-muted-foreground mt-0.5 text-xs">
-                Registra entrada e saída juntas quando alguém paga diretamente
-                ao fornecedor.
-              </p>
+          {/* Badge de transação vinculada */}
+          {isLinked && (
+            <div className="text-muted-foreground border-border bg-muted/20 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
+              <ArrowUpRight className="size-3.5 shrink-0" />
+              Transação vinculada — alterações refletem na entrada e saída
             </div>
-          </label>
+          )}
 
-          {/* Tipo — oculto quando pagamento direto */}
-          {!isDirectPayment && (
+          {/* Tipo — desabilitado em vinculadas */}
+          {!isLinked && (
             <div className="flex flex-col gap-1.5">
               <Label>
                 Tipo <span className="text-destructive ml-0.5">*</span>
@@ -217,7 +219,6 @@ export default function NewTransactionPage() {
             </div>
           )}
 
-          {/* Descrição */}
           <FormField
             name="description"
             label="Descrição do material ou serviço"
@@ -225,13 +226,11 @@ export default function NewTransactionPage() {
             required
           />
 
-          {/* Valor e Data */}
           <div className="grid grid-cols-2 gap-4">
             <CurrencyField name="amount" label="Valor" required />
             <FormField name="date" label="Data" type="date" required />
           </div>
 
-          {/* Responsável */}
           <FormField
             name="responsibleName"
             label="Nome do responsável"
@@ -239,7 +238,6 @@ export default function NewTransactionPage() {
             required
           />
 
-          {/* Categoria */}
           <ComboboxField
             name="categoryId"
             label="Categoria"
@@ -250,8 +248,7 @@ export default function NewTransactionPage() {
             required
           />
 
-          {/* Fornecedor — saída ou pagamento direto */}
-          {(type === "expense" || isDirectPayment) && (
+          {(type === "expense" || isLinked) && (
             <ComboboxField
               name="supplierId"
               label="Fornecedor"
@@ -263,7 +260,6 @@ export default function NewTransactionPage() {
             />
           )}
 
-          {/* Forma de pagamento */}
           <SelectField
             name="paymentMethod"
             label="Forma de pagamento"
@@ -271,21 +267,60 @@ export default function NewTransactionPage() {
             required
           />
 
-          {/* Comprovante e Nota Fiscal */}
+          {/* Arquivos atuais */}
+          {(transaction?.attachmentUrl || transaction?.invoiceUrl) && (
+            <div className="border-border bg-muted/10 flex flex-col gap-2 rounded-lg border p-3">
+              <p className="text-muted-foreground text-xs font-medium">
+                Arquivos atuais
+              </p>
+              {transaction.attachmentUrl && (
+                <Link
+                  href={transaction.attachmentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary text-xs hover:underline"
+                >
+                  Ver comprovante atual
+                </Link>
+              )}
+              {transaction.invoiceUrl && (
+                <Link
+                  href={transaction.invoiceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary text-xs hover:underline"
+                >
+                  Ver nota fiscal atual
+                </Link>
+              )}
+              <p className="text-muted-foreground text-xs">
+                Selecione um novo arquivo abaixo para substituir
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <FileUploadField name="attachmentFile" label="Comprovante" />
-            <FileUploadField name="invoiceFile" label="Nota fiscal" />
+            <FileUploadField
+              name="attachmentFile"
+              label="Substituir comprovante"
+            />
+            <FileUploadField
+              name="invoiceFile"
+              label="Substituir nota fiscal"
+            />
           </div>
 
-          <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
+          <Button
+            type="submit"
+            disabled={isSubmitting || !isDirty}
+            className="mt-2 w-full"
+          >
             {isSubmitting ? (
               <>
                 <LoaderCircle className="size-4 animate-spin" /> Salvando...
               </>
-            ) : isDirectPayment ? (
-              "Registrar entrada e saída"
             ) : (
-              "Registrar transação"
+              "Salvar alterações"
             )}
           </Button>
         </div>

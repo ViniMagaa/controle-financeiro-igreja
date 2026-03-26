@@ -1,8 +1,9 @@
 import { LinkedSide, Transaction } from "@/types/transaction.type";
 import { formatCurrency } from "@/utils/format-currency";
 import { formatDate } from "@/utils/format-date";
-import { paymentMethodLabels } from "@/utils/payment-method-labels";
-import { ArrowDownLeft, ArrowUpRight, Trash } from "lucide-react";
+import { paymentMethodLabels } from "@/utils/payment-method";
+import { ArrowDownLeft, ArrowUpRight, Pencil, Trash } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 
 type LinkedTransactionItemProps = {
@@ -16,6 +17,8 @@ export function LinkedTransactionItem({
   income,
   onDelete,
 }: LinkedTransactionItemProps) {
+  const router = useRouter();
+
   return (
     <li className="border-border overflow-hidden rounded-lg border">
       {/* Entrada — doação */}
@@ -58,9 +61,18 @@ export function LinkedTransactionItem({
           <span className="text-sm font-semibold text-red-600 dark:text-red-400">
             -{formatCurrency(Number(expense.amount))}
           </span>
-          <Button variant="destructive" onClick={onDelete} className="p-1.5!">
-            <Trash className="size-4" />
-          </Button>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              variant="secondary"
+              onClick={() => router.push(`/transactions/${income.id}/update`)}
+              className="p-1.5!"
+            >
+              <Pencil className="size-4" />
+            </Button>
+            <Button variant="destructive" onClick={onDelete} className="p-1.5!">
+              <Trash className="size-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </li>
