@@ -7,6 +7,7 @@ export type TransactionFilters = {
   supplierId?: string;
   month?: number;
   year?: number;
+  limit?: number;
 };
 
 type CreateTransactionData = {
@@ -74,6 +75,7 @@ export const transactionsService = {
         },
       },
       orderBy: { date: "desc" },
+      ...(filters.limit ? { take: filters.limit } : {}),
     });
   },
 
@@ -151,21 +153,32 @@ export const transactionsService = {
     return urls;
   },
 
-  async getSummary(month: number, year: number) {
-    const start = new Date(year, month - 1, 1);
-    const end = new Date(year, month, 1);
+  async getSummary(filters: { month?: number; year?: number } = {}) {
+    const where: Record<string, unknown> = {};
 
-    const transactions = await prisma.transaction.findMany({
-      where: { date: { gte: start, lt: end } },
-    });
+    if (filters.month && filters.year) {
+      const start = new Date(filters.year, filters.month - 1, 1);
+      const end = new Date(filters.year, filters.month, 1);
+      where.date = { gte: start, lt: end };
+    } else if (filters.year) {
+      const start = new Date(filters.year, 0, 1);
+      const end = new Date(filters.year + 1, 0, 1);
+      where.date = { gte: start, lt: end };
+    }
 
-    const income = transactions
-      .filter((t) => t.type === "income")
-      .reduce((acc, t) => acc + Number(t.amount), 0);
+    const [incomeResult, expenseResult] = await Promise.all([
+      prisma.transaction.aggregate({
+        where: { ...where, type: "income" },
+        _sum: { amount: true },
+      }),
+      prisma.transaction.aggregate({
+        where: { ...where, type: "expense" },
+        _sum: { amount: true },
+      }),
+    ]);
 
-    const expense = transactions
-      .filter((t) => t.type === "expense")
-      .reduce((acc, t) => acc + Number(t.amount), 0);
+    const income = Number(incomeResult._sum.amount ?? 0);
+    const expense = Number(expenseResult._sum.amount ?? 0);
 
     return { income, expense, balance: income - expense };
   },

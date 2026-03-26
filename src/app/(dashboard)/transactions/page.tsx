@@ -1,7 +1,6 @@
 "use client";
 
-import { LinkedTransactionItem } from "@/components/transactions/linked-transaction-items";
-import { SimpleTransactionItem } from "@/components/transactions/simple-transaction-item";
+import { TransactionsList } from "@/components/transactions-list";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { FormError } from "@/components/ui/form-error";
@@ -221,39 +220,40 @@ export default function TransactionsPage() {
           Limpar filtros
         </Button>
       </div>
-      {/* Totais do período filtrado */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {[
-          {
-            label: "Entradas",
-            value: totalIncome,
-            color: "text-green-600 dark:text-green-400",
-          },
-          {
-            label: "Saídas",
-            value: totalExpense,
-            color: "text-red-600 dark:text-red-400",
-          },
-          {
-            label: "Saldo",
-            value: totalIncome - totalExpense,
-            color: "text-blue-600 dark:text-blue-400",
-          },
-        ].map(({ label, value, color }) => (
-          <div
-            key={label}
-            className="border-border rounded-lg border px-4 py-3"
-          >
-            <p className="text-muted-foreground text-xs">{label}</p>
-            <p className={`mt-0.5 text-base font-semibold ${color}`}>
-              {formatCurrency(value)}
-            </p>
-          </div>
-        ))}
-      </div>
 
       {!loading && (
         <>
+          {/* Totais do período filtrado */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[
+              {
+                label: "Entradas",
+                value: totalIncome,
+                color: "text-green-600 dark:text-green-400",
+              },
+              {
+                label: "Saídas",
+                value: totalExpense,
+                color: "text-red-600 dark:text-red-400",
+              },
+              {
+                label: "Saldo",
+                value: totalIncome - totalExpense,
+                color: "text-blue-600 dark:text-blue-400",
+              },
+            ].map(({ label, value, color }) => (
+              <div
+                key={label}
+                className="border-border rounded-lg border px-4 py-3"
+              >
+                <p className="text-muted-foreground text-xs">{label}</p>
+                <p className={`mt-0.5 text-base font-semibold ${color}`}>
+                  {formatCurrency(value)}
+                </p>
+              </div>
+            ))}
+          </div>
+
           {visibleTransactions.length <= 0 ? (
             <div className="border-border text-muted-foreground rounded-lg border p-8 text-center text-sm">
               Nenhuma transação encontrada para os filtros selecionados.
@@ -265,41 +265,17 @@ export default function TransactionsPage() {
           )}
         </>
       )}
+
       {/* Lista */}
       {loading ? (
         <div className="flex justify-center py-12">
           <LoaderCircle className="text-muted-foreground size-5 animate-spin" />
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {visibleTransactions.map((t) => {
-            const isLinked = !!t.linkedTransaction;
-
-            // Par vinculado — entrada é o linkedTransaction da saída
-            const expense = t; // sempre a saída na lista raiz
-            const income = t.linkedTransaction; // entrada vinculada
-
-            if (isLinked && income) {
-              return (
-                <LinkedTransactionItem
-                  key={t.id}
-                  expense={expense}
-                  income={income}
-                  onDelete={() => handleDelete(t.id)}
-                />
-              );
-            }
-
-            // Transação simples
-            return (
-              <SimpleTransactionItem
-                key={t.id}
-                transaction={t}
-                onDelete={() => handleDelete(t.id)}
-              />
-            );
-          })}
-        </ul>
+        <TransactionsList
+          transactions={visibleTransactions}
+          handleDelete={handleDelete}
+        />
       )}
     </main>
   );

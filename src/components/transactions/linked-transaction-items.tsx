@@ -3,13 +3,13 @@ import { formatCurrency } from "@/utils/format-currency";
 import { formatDate } from "@/utils/format-date";
 import { paymentMethodLabels } from "@/utils/payment-method";
 import { ArrowDownLeft, ArrowUpRight, Pencil, Trash } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "../ui/button";
 
 type LinkedTransactionItemProps = {
   expense: Transaction;
   income: LinkedSide;
-  onDelete: () => void;
+  onDelete?: () => void;
 };
 
 export function LinkedTransactionItem({
@@ -17,8 +17,6 @@ export function LinkedTransactionItem({
   income,
   onDelete,
 }: LinkedTransactionItemProps) {
-  const router = useRouter();
-
   return (
     <li className="border-border overflow-hidden rounded-lg border">
       {/* Entrada — doação */}
@@ -61,18 +59,22 @@ export function LinkedTransactionItem({
           <span className="text-sm font-semibold text-red-600 dark:text-red-400">
             -{formatCurrency(Number(expense.amount))}
           </span>
-          <div className="flex shrink-0 items-center gap-1">
-            <Button
-              variant="secondary"
-              onClick={() => router.push(`/transactions/${income.id}/update`)}
-              className="p-1.5!"
-            >
-              <Pencil className="size-4" />
-            </Button>
-            <Button variant="destructive" onClick={onDelete} className="p-1.5!">
-              <Trash className="size-4" />
-            </Button>
-          </div>
+          {onDelete && (
+            <div className="flex shrink-0 items-center gap-1">
+              <Link href={`/transactions/${income.id}/update`}>
+                <Button variant="secondary" className="p-1.5!">
+                  <Pencil className="size-4" />
+                </Button>
+              </Link>
+              <Button
+                variant="destructive"
+                onClick={onDelete}
+                className="p-1.5!"
+              >
+                <Trash className="size-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </li>
