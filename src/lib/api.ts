@@ -57,6 +57,13 @@ api.put = <T>(endpoint: string, body: unknown, options?: ApiOptions) =>
     body: JSON.stringify(body),
   });
 
+api.patch = <T>(endpoint: string, body: unknown, options?: ApiOptions) =>
+  api<T>(endpoint, {
+    ...options,
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+
 api.delete = <T>(endpoint: string, options?: ApiOptions) =>
   api<T>(endpoint, { ...options, method: "DELETE" });
 
