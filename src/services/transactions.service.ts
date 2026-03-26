@@ -23,6 +23,19 @@ type CreateTransactionData = {
 };
 
 export const transactionsService = {
+  async findById(id: string) {
+    return prisma.transaction.findUnique({
+      where: { id },
+      include: {
+        category: true,
+        supplier: true,
+        linkedBy: {
+          include: { category: true, supplier: true },
+        },
+      },
+    });
+  },
+
   async list(filters: TransactionFilters = {}) {
     const where: Record<string, unknown> = {};
 
@@ -155,6 +168,48 @@ export const transactionsService = {
       .reduce((acc, t) => acc + Number(t.amount), 0);
 
     return { income, expense, balance: income - expense };
+  },
+
+  async update(id: string, data: Partial<CreateTransactionData>) {
+    return prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.findUnique({
+        where: { id },
+        include: { linkedBy: true },
+      });
+
+      if (!transaction) throw new Error("Transação não encontrada");
+
+      const updated = await tx.transaction.update({
+        where: { id },
+        data: {
+          ...data,
+          date: data.date ? new Date(data.date) : undefined,
+          supplierId: data.type === "expense" ? data.supplierId : null,
+        },
+        include: { category: true, supplier: true },
+      });
+
+      // Se tem par vinculado (entrada), espelha os campos compartilhados
+      const linkedId = transaction.linkedBy?.id;
+
+      if (linkedId) {
+        await tx.transaction.update({
+          where: { id: linkedId },
+          data: {
+            description: data.description,
+            amount: data.amount,
+            date: data.date ? new Date(data.date) : undefined,
+            categoryId: data.categoryId,
+            responsibleName: data.responsibleName,
+            paymentMethod: data.paymentMethod,
+            attachmentUrl: data.attachmentUrl,
+            invoiceUrl: data.invoiceUrl,
+          },
+        });
+      }
+
+      return updated;
+    });
   },
 
   async delete(id: string) {

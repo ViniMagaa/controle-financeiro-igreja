@@ -37,5 +37,11 @@ export const transactionFormSchema = transactionSchema.extend({
   invoiceFile: z.instanceof(File).optional().nullable(),
 });
 
+export const updateTransactionSchema = transactionSchema.extend({
+  previousAttachmentUrl: z.string().optional().nullable(),
+  previousInvoiceUrl: z.string().optional().nullable(),
+});
+
 export type TransactionSchema = z.infer<typeof transactionSchema>;
 export type TransactionFormSchema = z.infer<typeof transactionFormSchema>;
+export type UpdateTransactionSchema = z.infer<typeof updateTransactionSchema>;
