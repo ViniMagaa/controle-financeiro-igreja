@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { FormError } from "@/components/ui/form-error";
 import { Select } from "@/components/ui/select";
-import { Category, Supplier } from "@/generated/prisma/client";
+import { Supplier } from "@/generated/prisma/client";
 import { api } from "@/lib/api";
 import { Transaction } from "@/types/transaction.type";
 import { formatCurrency } from "@/utils/format-currency";
@@ -40,11 +40,9 @@ const yearOptions = [{ value: "", label: "Todos os anos" }].concat(
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState("");
-  const [categoryId, setCategoryId] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
@@ -54,7 +52,6 @@ export default function TransactionsPage() {
     setLoading(true);
     const params: Record<string, string> = {};
     if (type) params.type = type;
-    if (categoryId) params.categoryId = categoryId;
     if (supplierId) params.supplierId = supplierId;
     if (month) params.month = month;
     if (year) params.year = year;
@@ -69,16 +66,9 @@ export default function TransactionsPage() {
     }
     setTransactions(data ?? []);
     setLoading(false);
-  }, [type, categoryId, supplierId, month, year]);
+  }, [type, supplierId, month, year]);
 
   useEffect(() => {
-    api.get<Category[]>("/api/categories").then(({ data, error }) => {
-      if (error) {
-        toast.error(error);
-        return;
-      }
-      setCategories(data ?? []);
-    });
     api.get<Supplier[]>("/api/suppliers").then(({ data, error }) => {
       if (error) {
         toast.error(error);
@@ -93,7 +83,7 @@ export default function TransactionsPage() {
       fetchTransactions();
     }
     fetch();
-  }, [fetchTransactions, type, categoryId, month, year]);
+  }, [fetchTransactions, type, month, year]);
 
   async function handleDelete(id: string) {
     toast("Remover esta transação?", {
@@ -114,7 +104,6 @@ export default function TransactionsPage() {
 
   function clearFilters() {
     setType("");
-    setCategoryId("");
     setSupplierId("");
     setMonth("");
     setYear("");
@@ -128,10 +117,6 @@ export default function TransactionsPage() {
     if (t.linkedBy) return false;
     return true;
   });
-
-  const categoryOptions = [{ value: "", label: "Todas as categorias" }].concat(
-    categories.map((c) => ({ value: c.id, label: c.name })),
-  );
 
   const supplierOptions = [
     { value: "", label: "Todos os fornecedores" },
@@ -164,59 +149,43 @@ export default function TransactionsPage() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col items-end justify-between gap-2 sm:flex-row">
-        <div className="flex w-full flex-1 flex-col gap-2">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {/* Tipo */}
-            <Select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              options={typeOptions}
-            />
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {/* Tipo */}
+        <Select
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          options={typeOptions}
+        />
 
-            {/* Mês */}
-            <Select
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              options={monthOptions}
-            />
+        {/* Mês */}
+        <Select
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
+          options={monthOptions}
+        />
 
-            <div className="flex flex-col">
-              {/* Ano */}
-              <Select
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                options={yearOptions}
-                error={!!(month && !year)}
-              />
-              {month && !year && <FormError message="Selecione o ano" />}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {/* Categoria */}
-            <Combobox
-              options={categoryOptions}
-              value={categoryId}
-              onChange={(value) => setCategoryId(value)}
-              emptyMessage="Nenhuma categoria encontrada"
-            />
-
-            {/* Fornecedor */}
-            <Combobox
-              options={supplierOptions}
-              value={supplierId}
-              onChange={(value) => setSupplierId(value)}
-              emptyMessage="Nenhum fornecedor encontrado"
-            />
-          </div>
+        <div className="flex flex-col">
+          {/* Ano */}
+          <Select
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            options={yearOptions}
+            error={!!(month && !year)}
+          />
+          {month && !year && <FormError message="Selecione o ano" />}
         </div>
 
-        <Button
-          variant="secondary"
-          className="w-full sm:w-auto"
-          onClick={clearFilters}
-        >
+        <div className="sm:col-span-2">
+          {/* Fornecedor */}
+          <Combobox
+            options={supplierOptions}
+            value={supplierId}
+            onChange={(value) => setSupplierId(value)}
+            emptyMessage="Nenhum fornecedor encontrado"
+          />
+        </div>
+
+        <Button variant="secondary" className="w-full" onClick={clearFilters}>
           Limpar filtros
         </Button>
       </div>

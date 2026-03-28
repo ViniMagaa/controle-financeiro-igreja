@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 
 export type TransactionFilters = {
   type?: TransactionType;
-  categoryId?: string;
   supplierId?: string;
   month?: number;
   year?: number;
@@ -18,7 +17,6 @@ type CreateTransactionData = {
   responsibleName: string;
   supplierId?: string;
   paymentMethod: PaymentMethod;
-  categoryId: string;
   attachmentUrl?: string | null;
   invoiceUrl?: string | null;
 };
@@ -28,10 +26,9 @@ export const transactionsService = {
     return prisma.transaction.findUnique({
       where: { id },
       include: {
-        category: true,
         supplier: true,
         linkedBy: {
-          include: { category: true, supplier: true },
+          include: { supplier: true },
         },
       },
     });
@@ -47,7 +44,6 @@ export const transactionsService = {
         { linkedTransaction: { type: filters.type } },
       ];
     }
-    if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.supplierId) where.supplierId = filters.supplierId;
 
     if (filters.month && filters.year) {
@@ -65,13 +61,12 @@ export const transactionsService = {
     return prisma.transaction.findMany({
       where,
       include: {
-        category: true,
         supplier: true,
         linkedTransaction: {
-          include: { category: true, supplier: true },
+          include: { supplier: true },
         },
         linkedBy: {
-          include: { category: true, supplier: true },
+          include: { supplier: true },
         },
       },
       orderBy: { date: "desc" },
@@ -85,7 +80,7 @@ export const transactionsService = {
         ...data,
         date: new Date(data.date),
       },
-      include: { category: true, supplier: true },
+      include: { supplier: true },
     });
   },
 
@@ -108,7 +103,7 @@ export const transactionsService = {
           type: "income",
           linkedTransactionId: expense.id,
         },
-        include: { category: true, supplier: true },
+        include: { supplier: true },
       });
 
       return { transaction1: expense, transaction2: income };
@@ -199,7 +194,7 @@ export const transactionsService = {
           date: data.date ? new Date(data.date) : undefined,
           supplierId: data.type === "expense" ? data.supplierId : null,
         },
-        include: { category: true, supplier: true },
+        include: { supplier: true },
       });
 
       // Se tem par vinculado (entrada), espelha os campos compartilhados
@@ -212,7 +207,6 @@ export const transactionsService = {
             description: data.description,
             amount: data.amount,
             date: data.date ? new Date(data.date) : undefined,
-            categoryId: data.categoryId,
             responsibleName: data.responsibleName,
             paymentMethod: data.paymentMethod,
             attachmentUrl: data.attachmentUrl,

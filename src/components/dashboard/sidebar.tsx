@@ -19,7 +19,6 @@ import { toast } from "sonner";
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transações", icon: ArrowLeftRight },
-  { href: "/categories", label: "Categorias", icon: Tag },
   { href: "/suppliers", label: "Fornecedores", icon: Truck },
 ];
 

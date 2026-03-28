@@ -34,8 +34,7 @@ export function SimpleTransactionItem({
         <div>
           <p className="text-sm font-medium">{t.description}</p>
           <p className="text-muted-foreground mt-0.5 text-xs">
-            {t.category.name} · {paymentMethodLabels[t.paymentMethod]} ·{" "}
-            {formatDate(t.date)}
+            {paymentMethodLabels[t.paymentMethod]} · {formatDate(t.date)}
           </p>
           <p className="text-muted-foreground text-xs">
             {t.responsibleName}

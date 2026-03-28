@@ -9,7 +9,7 @@ import { FormError } from "@/components/ui/form-error";
 import { FormField } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
 import { SelectField } from "@/components/ui/select-field";
-import { Category, Supplier } from "@/generated/prisma/client";
+import { Supplier } from "@/generated/prisma/client";
 import { api } from "@/lib/api";
 import { uploadFile } from "@/lib/supabase/storage.client";
 import {
@@ -27,7 +27,6 @@ import { toast } from "sonner";
 
 export default function NewTransactionPage() {
   const router = useRouter();
-  const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
   const form = useForm<TransactionFormSchema>({
@@ -50,13 +49,6 @@ export default function NewTransactionPage() {
   const isDirectPayment = watch("isDirectPayment") ?? false;
 
   useEffect(() => {
-    api.get<Category[]>("/api/categories").then(({ data, error }) => {
-      if (error) {
-        toast.error(error);
-        return;
-      }
-      setCategories(data ?? []);
-    });
     api.get<Supplier[]>("/api/suppliers").then(({ data, error }) => {
       if (error) {
         toast.error(error);
@@ -132,10 +124,6 @@ export default function NewTransactionPage() {
     router.push("/transactions");
   }
 
-  const categoryOptions = categories.map((c) => ({
-    value: c.id,
-    label: c.name,
-  }));
   const supplierOptions = suppliers.map((s) => ({
     value: s.id,
     label: s.name,
@@ -231,14 +219,11 @@ export default function NewTransactionPage() {
             required
           />
 
-          {/* Categoria */}
-          <ComboboxField
-            name="categoryId"
-            label="Categoria"
-            options={categoryOptions}
-            placeholder="Selecione uma categoria..."
-            searchPlaceholder="Buscar categoria..."
-            emptyMessage="Nenhuma categoria encontrada."
+          {/* Forma de pagamento */}
+          <SelectField
+            name="paymentMethod"
+            label="Forma de pagamento"
+            options={paymentMethodOptions}
             required
           />
 
@@ -254,14 +239,6 @@ export default function NewTransactionPage() {
               required
             />
           )}
-
-          {/* Forma de pagamento */}
-          <SelectField
-            name="paymentMethod"
-            label="Forma de pagamento"
-            options={paymentMethodOptions}
-            required
-          />
 
           {/* Descrição */}
           <FormField

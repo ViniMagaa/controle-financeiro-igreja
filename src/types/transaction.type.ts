@@ -1,4 +1,4 @@
-import { Category, PaymentMethod, Supplier } from "@/generated/prisma/client";
+import { PaymentMethod, Supplier } from "@/generated/prisma/client";
 
 export type Transaction = {
   id: string;
@@ -9,7 +9,6 @@ export type Transaction = {
   responsibleName: string;
   supplier: Supplier | null;
   paymentMethod: PaymentMethod;
-  category: Category;
   linkedTransactionId: string | null;
   linkedTransaction: LinkedSide | null;
   linkedBy: LinkedSide | null;

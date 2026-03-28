@@ -15,9 +15,6 @@ export const transactionSchema = z
     paymentMethod: z.enum(["pix", "cash", "card", "boleto", "transfer"], {
       error: "Forma de pagamento é obrigatória",
     }),
-    categoryId: z
-      .string("Categoria é obrigatória")
-      .min(1, "Categoria é obrigatória"),
     attachmentUrl: z.url().optional().nullable(),
     invoiceUrl: z.url().optional().nullable(),
   })

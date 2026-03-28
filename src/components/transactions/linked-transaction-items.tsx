@@ -50,7 +50,6 @@ export function LinkedTransactionItem({
           <p className="truncate text-sm font-medium">{expense.description}</p>
           <p className="text-muted-foreground text-xs">
             {expense.supplier?.name && `${expense.supplier.name} · `}
-            {expense.category.name} ·{" "}
             {paymentMethodLabels[expense.paymentMethod]} ·{" "}
             {formatDate(expense.date)}
           </p>

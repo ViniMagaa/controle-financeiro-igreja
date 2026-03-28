@@ -9,7 +9,7 @@ import { FormError } from "@/components/ui/form-error";
 import { FormField } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
 import { SelectField } from "@/components/ui/select-field";
-import { Category, Supplier } from "@/generated/prisma/client";
+import { Supplier } from "@/generated/prisma/client";
 import { api } from "@/lib/api";
 import { uploadFile } from "@/lib/supabase/storage.client";
 import {
@@ -31,7 +31,6 @@ export default function UpdateTransactionPage() {
   const router = useRouter();
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,7 +42,6 @@ export default function UpdateTransactionPage() {
     register,
     watch,
     reset,
-    setValue,
     formState: { errors, isSubmitting, isDirty },
   } = form;
 
@@ -53,9 +51,8 @@ export default function UpdateTransactionPage() {
   useEffect(() => {
     Promise.all([
       api.get<Transaction>(`/api/transactions/${id}`),
-      api.get<Category[]>("/api/categories"),
       api.get<Supplier[]>("/api/suppliers"),
-    ]).then(([txRes, catRes, supRes]) => {
+    ]).then(([txRes, supRes]) => {
       if (txRes.error) {
         toast.error(txRes.error);
         return;
@@ -63,7 +60,6 @@ export default function UpdateTransactionPage() {
 
       const t = txRes.data!;
       setTransaction(t);
-      setCategories(catRes.data ?? []);
       setSuppliers(supRes.data ?? []);
 
       reset({
@@ -74,18 +70,11 @@ export default function UpdateTransactionPage() {
         responsibleName: t.responsibleName,
         supplierId: t.supplier?.id ?? undefined,
         paymentMethod: t.paymentMethod,
-        categoryId: t.category.id,
       });
 
       setLoading(false);
     });
   }, [id, reset]);
-
-  // useEffect(() => {
-  //   if (type === "income") {
-  //     setValue("supplierId", "");
-  //   }
-  // }, [type, setValue]);
 
   async function onSubmit(data: TransactionFormSchema) {
     let attachmentUrl = transaction?.attachmentUrl ?? null;
@@ -123,7 +112,6 @@ export default function UpdateTransactionPage() {
 
     const payload = {
       ...data,
-
       attachmentUrl,
       invoiceUrl,
       previousAttachmentUrl,
@@ -143,10 +131,6 @@ export default function UpdateTransactionPage() {
     router.push("/transactions");
   }
 
-  const categoryOptions = categories.map((c) => ({
-    value: c.id,
-    label: c.name,
-  }));
   const supplierOptions = suppliers.map((s) => ({
     value: s.id,
     label: s.name,
@@ -219,13 +203,6 @@ export default function UpdateTransactionPage() {
             </div>
           )}
 
-          <FormField
-            name="description"
-            label="Descrição do material ou serviço"
-            placeholder="Ex: Cimento 50kg, Mão de obra elétrica..."
-            required
-          />
-
           <div className="grid grid-cols-2 gap-4">
             <CurrencyField name="amount" label="Valor" required />
             <FormField name="date" label="Data" type="date" required />
@@ -238,13 +215,10 @@ export default function UpdateTransactionPage() {
             required
           />
 
-          <ComboboxField
-            name="categoryId"
-            label="Categoria"
-            options={categoryOptions}
-            placeholder="Selecione uma categoria..."
-            searchPlaceholder="Buscar categoria..."
-            emptyMessage="Nenhuma categoria encontrada."
+          <SelectField
+            name="paymentMethod"
+            label="Forma de pagamento"
+            options={paymentMethodOptions}
             required
           />
 
@@ -260,11 +234,10 @@ export default function UpdateTransactionPage() {
             />
           )}
 
-          <SelectField
-            name="paymentMethod"
-            label="Forma de pagamento"
-            options={paymentMethodOptions}
-            required
+          <FormField
+            name="description"
+            label="Descrição do material ou serviço"
+            placeholder="Ex: Cimento 50kg, Mão de obra elétrica..."
           />
 
           {/* Arquivos atuais */}
