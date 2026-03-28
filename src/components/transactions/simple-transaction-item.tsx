@@ -2,7 +2,13 @@ import { Transaction } from "@/types/transaction.type";
 import { formatCurrency } from "@/utils/format-currency";
 import { formatDate } from "@/utils/format-date";
 import { paymentMethodLabels } from "@/utils/payment-method";
-import { Pencil, Trash, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  MoveRight,
+  Pencil,
+  Trash,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "../ui/button";
 
@@ -17,7 +23,7 @@ export function SimpleTransactionItem({
 }: SimpleTransactionItemProps) {
   return (
     <li className="border-border flex items-start justify-between gap-4 rounded-lg border px-4 py-3">
-      <div className="flex items-start gap-3">
+      <div className="flex gap-3">
         <div
           className={`mt-0.5 rounded-md p-1.5 ${
             t.type === "income"
@@ -31,19 +37,24 @@ export function SimpleTransactionItem({
             <TrendingDown className="size-3.5 text-red-600 dark:text-red-400" />
           )}
         </div>
-        <div>
-          <p className="text-sm font-medium">{t.description}</p>
-          <p className="text-muted-foreground mt-0.5 text-xs">
-            {paymentMethodLabels[t.paymentMethod]} · {formatDate(t.date)}
-          </p>
-          <p className="text-muted-foreground text-xs">
+        <div className="flex items-center gap-3">
+          <p className="text-muted-foreground text-xs">{formatDate(t.date)}</p>
+          <div className="flex items-center gap-2 text-sm font-medium">
             {t.responsibleName}
-            {t.supplier?.name && ` → ${t.supplier.name}`}
+            {t.supplier?.name && (
+              <>
+                <MoveRight className="size-4" /> {t.supplier.name}
+              </>
+            )}
+          </div>
+          <p className="text-muted-foreground text-xs">
+            {paymentMethodLabels[t.paymentMethod]}
+            {t.description && " · " + t.description}
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col items-end gap-3">
+      <div className="flex items-center gap-3">
         <span
           className={`text-sm font-semibold ${
             t.type === "income"
