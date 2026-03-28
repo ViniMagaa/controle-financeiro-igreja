@@ -217,14 +217,6 @@ export default function NewTransactionPage() {
             </div>
           )}
 
-          {/* Descrição */}
-          <FormField
-            name="description"
-            label="Descrição do material ou serviço"
-            placeholder="Ex: Cimento 50kg, Mão de obra elétrica..."
-            required
-          />
-
           {/* Valor e Data */}
           <div className="grid grid-cols-2 gap-4">
             <CurrencyField name="amount" label="Valor" required />
@@ -269,6 +261,13 @@ export default function NewTransactionPage() {
             label="Forma de pagamento"
             options={paymentMethodOptions}
             required
+          />
+
+          {/* Descrição */}
+          <FormField
+            name="description"
+            label="Descrição do material ou serviço"
+            placeholder="Ex: Cimento 50kg, Mão de obra elétrica..."
           />
 
           {/* Comprovante e Nota Fiscal */}

@@ -5,7 +5,7 @@ export const transactionSchema = z
     type: z.enum(["income", "expense"], {
       error: "Tipo é obrigatório",
     }),
-    description: z.string().min(1, "Descrição é obrigatória"),
+    description: z.string().optional(),
     amount: z
       .number({ error: "Valor é obrigatório" })
       .positive("Valor deve ser maior que zero"),

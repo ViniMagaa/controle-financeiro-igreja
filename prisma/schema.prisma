@@ -28,7 +28,7 @@ model Supplier {
 model Transaction {
   id              String          @id @default(uuid())
   type            TransactionType
-  description     String
+  description     String?
   amount          Decimal         @db.Decimal(10, 2)
   date            DateTime        @db.Date
   responsibleName String          @map("responsible_name")

@@ -12,7 +12,7 @@ export type TransactionFilters = {
 
 type CreateTransactionData = {
   type: TransactionType;
-  description: string;
+  description?: string;
   amount: number;
   date: string;
   responsibleName: string;
