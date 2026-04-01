@@ -6,9 +6,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Church,
+  FileText,
   LayoutDashboard,
   LogOut,
-  Tag,
   Truck,
 } from "lucide-react";
 import Link from "next/link";
@@ -20,6 +20,7 @@ const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transações", icon: ArrowLeftRight },
   { href: "/suppliers", label: "Fornecedores", icon: Truck },
+  { href: "/reports", label: "Relatórios", icon: FileText },
 ];
 
 type SidebarProps = {
