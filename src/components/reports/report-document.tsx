@@ -94,7 +94,7 @@ export function ReportDocument({
                   Saldo das doações {prevMonthName}
                 </td>
                 <td
-                  className="text-right font-semibold text-[#00cc00]"
+                  className="text-right font-semibold text-[#008000]"
                   style={tdStyle}
                 >
                   {formatCurrency(report.previousBalance)}
@@ -111,7 +111,7 @@ export function ReportDocument({
                   Total das doações de {monthName}
                 </td>
                 <td
-                  className="text-right font-semibold text-[#00cc00]"
+                  className="text-right font-semibold text-[#008000]"
                   style={tdStyle}
                 >
                   {formatCurrency(report.totalIncome)}
@@ -174,7 +174,7 @@ export function ReportDocument({
                       {t.supplierName}
                     </td>
                     <td
-                      className="text-right font-semibold text-[#cc0000]"
+                      className="text-right font-semibold text-[#990000]"
                       style={tdStyle}
                     >
                       {formatCurrency(t.amount)}
@@ -197,13 +197,13 @@ export function ReportDocument({
             <tfoot>
               <tr>
                 <td
-                  className="bg-[#ff000033] text-right font-bold text-[#cc0000]"
+                  className="bg-[#cc000022] text-right font-bold text-[#990000]"
                   style={tdStyle}
                 >
                   Total dos gastos com materiais
                 </td>
                 <td
-                  className="bg-[#ff000033] text-right font-bold text-[#cc0000]"
+                  className="bg-[#cc000022] text-right font-bold text-[#990000]"
                   style={tdStyle}
                 >
                   {formatCurrency(report.totalExpense)}

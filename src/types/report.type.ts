@@ -4,6 +4,7 @@ export type ReportTransaction = {
   amount: number;
 };
 
+// Relatório mensal
 export type ReportData = {
   month: number;
   year: number;
@@ -14,4 +15,19 @@ export type ReportData = {
   balance: number;
   incomeTransactions: ReportTransaction[];
   expenseTransactions: ReportTransaction[];
+};
+
+// Relatório por fornecedor
+export type SupplierReportRow = {
+  id: string;
+  date: string;
+  responsibleName: string;
+  amount: number;
+};
+
+export type SupplierReportData = {
+  supplierId: string;
+  supplierName: string;
+  total: number;
+  transactions: SupplierReportRow[];
 };
