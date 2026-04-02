@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
@@ -19,7 +19,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar userName={userName} />
-      <div className="flex-1 overflow-y-auto">{children}</div>
+      <div className="flex-1 overflow-y-auto max-sm:pl-15">{children}</div>
     </div>
   );
 }
