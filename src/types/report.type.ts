@@ -1,10 +1,11 @@
+// ─── Relatório mensal ─────────────────────────────────────────────────────────
+
 export type ReportTransaction = {
   id: string;
   supplierName: string;
   amount: number;
 };
 
-// Relatório mensal
 export type ReportData = {
   month: number;
   year: number;
@@ -17,7 +18,8 @@ export type ReportData = {
   expenseTransactions: ReportTransaction[];
 };
 
-// Relatório por fornecedor
+// ─── Relatório por fornecedor ─────────────────────────────────────────────────
+
 export type SupplierReportRow = {
   id: string;
   date: string;
@@ -30,4 +32,21 @@ export type SupplierReportData = {
   supplierName: string;
   total: number;
   transactions: SupplierReportRow[];
+};
+
+// ─── Relatório anual ──────────────────────────────────────────────────────────
+
+export type AnnualReportMonth = {
+  month: number; // 1–12
+  income: number;
+  expense: number;
+};
+
+export type AnnualReportData = {
+  year: number;
+  previousYearBalance: number;
+  months: AnnualReportMonth[];
+  totalIncome: number;
+  totalExpense: number;
+  balance: number;
 };
