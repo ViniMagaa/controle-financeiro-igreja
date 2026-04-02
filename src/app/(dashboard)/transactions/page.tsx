@@ -4,6 +4,7 @@ import { TransactionsList } from "@/components/transactions-list";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { FormError } from "@/components/ui/form-error";
+import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Supplier } from "@/generated/prisma/client";
 import { api } from "@/lib/api";
@@ -11,7 +12,7 @@ import { Transaction } from "@/types/transaction.type";
 import { formatCurrency } from "@/utils/format-currency";
 import { LoaderCircle, Plus } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const now = new Date();
@@ -46,6 +47,7 @@ export default function TransactionsPage() {
   const [supplierId, setSupplierId] = useState("");
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
+  const [responsibleName, setResponsibleName] = useState("");
 
   const fetchTransactions = useCallback(async () => {
     if (month && !year) return;
@@ -107,16 +109,23 @@ export default function TransactionsPage() {
     setSupplierId("");
     setMonth("");
     setYear("");
+    setResponsibleName("");
   }
 
   // Filtra transações vinculadas para não mostrar as duas separadas
   // Mostra apenas a "expense" (saída) que tem linkedTransaction (entrada)
   // A entrada vinculada (linkedBy) é omitida da lista raiz
-  const visibleTransactions = transactions.filter((t) => {
-    // Se tem linkedBy, significa que é a entrada de um par — oculta da lista raiz
-    if (t.linkedBy) return false;
-    return true;
-  });
+  const visibleTransactions = useMemo(
+    () =>
+      transactions.filter((t) => {
+        // Se tem linkedBy, significa que é a entrada de um par — oculta da lista raiz
+        if (t.linkedBy) return false;
+        return t.responsibleName
+          .toLocaleLowerCase()
+          .includes(responsibleName.toLocaleLowerCase());
+      }),
+    [transactions, responsibleName],
+  );
 
   const supplierOptions = [
     { value: "", label: "Todos os fornecedores" },
@@ -175,15 +184,19 @@ export default function TransactionsPage() {
           {month && !year && <FormError message="Selecione o ano" />}
         </div>
 
-        <div className="sm:col-span-2">
-          {/* Fornecedor */}
-          <Combobox
-            options={supplierOptions}
-            value={supplierId}
-            onChange={(value) => setSupplierId(value)}
-            emptyMessage="Nenhum fornecedor encontrado"
-          />
-        </div>
+        {/* Fornecedor */}
+        <Combobox
+          options={supplierOptions}
+          value={supplierId}
+          onChange={(value) => setSupplierId(value)}
+          emptyMessage="Nenhum fornecedor encontrado"
+        />
+
+        <Input
+          value={responsibleName}
+          onChange={(e) => setResponsibleName(e.target.value)}
+          placeholder="Nome do responsável"
+        />
 
         <Button variant="secondary" className="w-full" onClick={clearFilters}>
           Limpar filtros
