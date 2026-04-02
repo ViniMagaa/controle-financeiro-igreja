@@ -23,10 +23,10 @@ export function LinkedTransactionItem({
   const router = useRouter();
   return (
     <li
-      className="border-border hover:bg-muted/60 flex cursor-pointer justify-between gap-3 overflow-hidden rounded-lg border px-4 py-3 transition"
+      className="border-border hover:bg-muted/60 flex cursor-pointer flex-wrap justify-between gap-3 overflow-hidden rounded-lg border px-4 py-3 transition"
       onClick={() => router.push(`/transactions/${income.id}`)}
     >
-      <div className="flex flex-1 items-center gap-4">
+      <div className="flex flex-1 items-center gap-4 max-sm:flex-col max-sm:items-start">
         {/* Entrada — doação */}
         <div className="flex items-center gap-3">
           <div
@@ -48,7 +48,7 @@ export function LinkedTransactionItem({
         </div>
 
         {/* Separador */}
-        <div className="border-border h-full border-l border-dashed" />
+        <div className="border-border h-full border-l border-dashed max-sm:hidden" />
 
         {/* Saída — pagamento ao fornecedor */}
         <div className="flex items-center gap-3">
@@ -66,13 +66,12 @@ export function LinkedTransactionItem({
             {expense.description && " · " + expense.description}
           </p>
         </div>
+      </div>
 
+      <div className="ml-auto flex items-center gap-3">
         <span className="ml-auto text-sm font-semibold text-red-600 dark:text-red-400">
           -{formatCurrency(Number(expense.amount))}
         </span>
-      </div>
-
-      <div className="flex items-center gap-2">
         {onDelete && (
           <div className="flex shrink-0 items-center gap-1">
             <Link href={`/transactions/${income.id}/update`}>

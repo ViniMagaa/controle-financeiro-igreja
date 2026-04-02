@@ -25,10 +25,10 @@ export function SimpleTransactionItem({
   const router = useRouter();
   return (
     <li
-      className="border-border hover:bg-muted/60 flex cursor-pointer items-start justify-between gap-4 rounded-lg border px-4 py-3 transition"
+      className="border-border hover:bg-muted/60 flex cursor-pointer flex-wrap items-start justify-between gap-2 rounded-lg border px-4 py-3 transition"
       onClick={() => router.push(`/transactions/${t.id}`)}
     >
-      <div className="flex gap-3">
+      <div className="flex items-center gap-3">
         <div
           className={`mt-0.5 rounded-md p-1.5 ${
             t.type === "income"
@@ -42,7 +42,7 @@ export function SimpleTransactionItem({
             <TrendingDown className="size-3.5 text-red-600 dark:text-red-400" />
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <p className="text-muted-foreground text-xs">{formatDate(t.date)}</p>
           <div className="flex items-center gap-2 text-sm font-medium">
             {t.responsibleName}
@@ -59,7 +59,7 @@ export function SimpleTransactionItem({
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="ml-auto flex items-center gap-3">
         <span
           className={`text-sm font-semibold ${
             t.type === "income"
