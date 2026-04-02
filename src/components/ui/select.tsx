@@ -14,7 +14,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           className={`bg-background border-border focus:ring-ring focus:border-ring w-full appearance-none rounded-md border px-3 py-2 pr-9 text-sm transition outline-none focus:ring-2 ${error ? "border-red-500 focus:ring-red-500" : ""} ${className} `}
-          defaultValue={props.value || ""}
+          value={props.value || ""}
           {...props}
         >
           {placeholder && (
