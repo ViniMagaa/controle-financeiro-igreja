@@ -1,5 +1,7 @@
 // ─── Relatório mensal ─────────────────────────────────────────────────────────
 
+import { TransactionType } from "@/generated/prisma/enums";
+
 export type ReportTransaction = {
   id: string;
   supplierName: string;
@@ -49,4 +51,29 @@ export type AnnualReportData = {
   totalIncome: number;
   totalExpense: number;
   balance: number;
+};
+
+// ─── Relatório de entradas ────────────────────────────────────────────────────
+
+export type TransactionsReportRow = {
+  id: string;
+  type: TransactionType;
+  date: string;
+  responsibleName: string;
+  supplierName: string | null;
+  paymentMethod: string;
+  amount: number;
+};
+
+export type TransactionsReportData = {
+  transactions: TransactionsReportRow[];
+  total: number;
+  filters: {
+    month: number | null;
+    year: number | null;
+    supplierId: string | null;
+    supplierName: string | null;
+    responsibleName: string | null;
+    type: string | null;
+  };
 };

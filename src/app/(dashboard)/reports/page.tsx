@@ -3,17 +3,21 @@
 import { AnnualReportDocument } from "@/components/reports/annual-report-document";
 import { ReportDocument } from "@/components/reports/report-document";
 import { SupplierReportDocument } from "@/components/reports/supplier-report-document";
+import { TransactionsReportDocument } from "@/components/reports/transactions-report-document";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
+import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Supplier } from "@/generated/prisma/client";
 import { api } from "@/lib/api";
 import {
   AnnualReportData,
   ReportData,
   SupplierReportData,
+  TransactionsReportData,
 } from "@/types/report.type";
 import { capitalize } from "@/utils/capitalize-string";
-import { Supplier } from "@/generated/prisma/client";
+import { paymentMethodOptions as paymentMethod } from "@/utils/payment-method";
 import { Loader2, Printer } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -55,12 +59,26 @@ const yearOptions = YEARS.map((y) => ({
   label: y.toString(),
 }));
 
-type ReportType = "monthly" | "supplier" | "annual";
+const typeOptions = [
+  { value: "", label: "Todos os tipos" },
+  { value: "income", label: "Entradas" },
+  { value: "expense", label: "Saídas" },
+];
+
+const paymentMethodOptions = [
+  {
+    value: "",
+    label: "Todos os pagamentos",
+  },
+].concat(paymentMethod);
+
+type ReportType = "monthly" | "supplier" | "annual" | "transactions";
 
 const REPORT_LABELS: Record<ReportType, string> = {
-  monthly: "Por mês",
-  supplier: "Por fornecedor",
+  monthly: "Mensal",
+  supplier: "Fornecedor",
   annual: "Anual",
+  transactions: "Transações",
 };
 
 // ─── Página ────────────────────────────────────────────────────────────────────
@@ -68,13 +86,16 @@ const REPORT_LABELS: Record<ReportType, string> = {
 export default function ReportsPage() {
   const [reportType, setReportType] = useState<ReportType>("monthly");
 
-  // Filtros compartilhados
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [year, setYear] = useState(now.getFullYear());
+  // Filtros compartilhados (mês/ano)
+  const [month, setMonth] = useState((now.getMonth() + 1).toString());
+  const [year, setYear] = useState(now.getFullYear().toString());
 
-  // Filtro exclusivo do relatório por fornecedor
+  // Filtros do relatório por fornecedor / transações
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [supplierId, setSupplierId] = useState("");
+  const [responsibleName, setResponsibleName] = useState("");
+  const [transactionType, setTransactionType] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
 
   // Dados
   const [monthlyReport, setMonthlyReport] = useState<ReportData | null>(null);
@@ -83,6 +104,8 @@ export default function ReportsPage() {
   const [annualReport, setAnnualReport] = useState<AnnualReportData | null>(
     null,
   );
+  const [transactionsReport, setTransactionsReport] =
+    useState<TransactionsReportData | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Carrega fornecedores uma vez
@@ -92,16 +115,15 @@ export default function ReportsPage() {
         toast.error(error);
         return;
       }
-      const list = data ?? [];
-      setSuppliers(list);
-      if (list.length > 0) setSupplierId(list[0].id);
+      setSuppliers(data ?? []);
     });
   }, []);
 
   const fetchMonthly = useCallback(async () => {
+    if (!month || !year) return;
     setLoading(true);
     const { data, error } = await api.get<ReportData>("/api/reports/monthly", {
-      params: { month: String(month), year: String(year) },
+      params: { month, year },
     });
     if (error) {
       toast.error(error);
@@ -115,11 +137,12 @@ export default function ReportsPage() {
   const fetchSupplier = useCallback(async () => {
     if (!supplierId) return;
     setLoading(true);
+    const params: Record<string, string> = { supplierId };
+    if (month) params.month = month;
+    if (year) params.year = year;
     const { data, error } = await api.get<SupplierReportData>(
       "/api/reports/supplier",
-      {
-        params: { supplierId, month: String(month), year: String(year) },
-      },
+      { params },
     );
     if (error) {
       toast.error(error);
@@ -131,11 +154,12 @@ export default function ReportsPage() {
   }, [supplierId, month, year]);
 
   const fetchAnnual = useCallback(async () => {
+    if (!year) return;
     setLoading(true);
     const { data, error } = await api.get<AnnualReportData>(
       "/api/reports/annual",
       {
-        params: { year: String(year) },
+        params: { year },
       },
     );
     if (error) {
@@ -147,16 +171,71 @@ export default function ReportsPage() {
     setLoading(false);
   }, [year]);
 
+  const fetchTransactions = useCallback(async () => {
+    setLoading(true);
+    const params: Record<string, string> = {};
+    if (transactionType) params.type = transactionType;
+    if (supplierId) params.supplierId = supplierId;
+    if (responsibleName) params.responsibleName = responsibleName;
+    if (paymentMethod) params.paymentMethod = paymentMethod;
+    if (month) params.month = month;
+    if (year) params.year = year;
+    const { data, error } = await api.get<TransactionsReportData>(
+      "/api/reports/transactions",
+      { params },
+    );
+    if (error) {
+      toast.error(error);
+      setLoading(false);
+      return;
+    }
+    setTransactionsReport(data);
+    setLoading(false);
+  }, [
+    transactionType,
+    supplierId,
+    responsibleName,
+    paymentMethod,
+    month,
+    year,
+  ]);
+
   useEffect(() => {
     async function fetch(fn: () => Promise<void>) {
       fn();
     }
     if (reportType === "monthly") fetch(fetchMonthly);
     else if (reportType === "supplier") fetch(fetchSupplier);
-    else fetch(fetchAnnual);
-  }, [reportType, fetchMonthly, fetchSupplier, fetchAnnual]);
+    else if (reportType === "annual") fetch(fetchAnnual);
+    else fetch(fetchTransactions);
+  }, [reportType, fetchMonthly, fetchSupplier, fetchAnnual, fetchTransactions]);
 
-  const hasReport = !!monthlyReport || !!supplierReport || !!annualReport;
+  // Badge do cabeçalho do relatório de transações
+  function buildTransactionsBadge() {
+    const parts: string[] = [];
+    if (transactionType === "income") parts.push("Entradas");
+    else if (transactionType === "expense") parts.push("Saídas");
+    else parts.push("Transações");
+    if (month && year) parts.push(`${MONTHS[Number(month) - 1]} ${year}`);
+    else if (month) parts.push(MONTHS[Number(month) - 1]);
+    else if (year) parts.push(year);
+    if (supplierId) {
+      const supplier = suppliers.find((s) => s.id === supplierId);
+      return (
+        <p>
+          {parts.join(" · ")} <br />
+          {supplier?.name?.toLocaleUpperCase() || "FORNECEDOR"}
+        </p>
+      );
+    }
+    return parts.join(" · ");
+  }
+
+  const hasReport =
+    !!monthlyReport ||
+    !!supplierReport ||
+    !!annualReport ||
+    !!transactionsReport;
 
   return (
     <>
@@ -190,9 +269,11 @@ export default function ReportsPage() {
             </Button>
           </div>
 
-          <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+          <div
+            className={`flex flex-row flex-wrap justify-between gap-2 ${["supplier", "transactions"].includes(reportType) ? "flex-col!" : ""}`}
+          >
             {/* Seletor de tipo */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {(Object.keys(REPORT_LABELS) as ReportType[]).map((t) => (
                 <Button
                   key={t}
@@ -209,27 +290,23 @@ export default function ReportsPage() {
             </div>
 
             {/* Filtros */}
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-1 sm:flex-wrap sm:justify-end">
-              {/* Fornecedor — exclusivo do tipo "supplier" */}
-              {reportType === "supplier" && (
-                <div className="col-span-2 w-full sm:max-w-65">
-                  <Combobox
-                    options={suppliers.map((s) => ({
-                      value: s.id,
-                      label: s.name,
-                    }))}
-                    value={supplierId}
-                    onChange={setSupplierId}
-                    emptyMessage="Nenhum fornecedor encontrado"
-                  />
-                </div>
+            <div
+              className={`flex gap-2 ${["supplier", "transactions"].includes(reportType) ? "grid grid-cols-1 sm:grid-cols-3" : ""}`}
+            >
+              {/* Tipo de transação — exclusivo do relatório de transações */}
+              {reportType === "transactions" && (
+                <Select
+                  value={transactionType}
+                  onChange={(e) => setTransactionType(e.target.value)}
+                  options={typeOptions}
+                />
               )}
 
-              {/* Mês — apenas nos tipos que precisam dele */}
+              {/* Mês — oculto no anual */}
               {reportType !== "annual" && (
                 <Select
                   value={month}
-                  onChange={(e) => setMonth(Number(e.target.value))}
+                  onChange={(e) => setMonth(e.target.value)}
                   options={monthOptions}
                 />
               )}
@@ -237,9 +314,42 @@ export default function ReportsPage() {
               {/* Ano — sempre presente */}
               <Select
                 value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
+                onChange={(e) => setYear(e.target.value)}
                 options={yearOptions}
               />
+
+              {/* Fornecedor — supplier e transactions */}
+              {(reportType === "supplier" || reportType === "transactions") && (
+                <Combobox
+                  options={[
+                    ...(reportType === "transactions"
+                      ? [{ value: "", label: "Todos os fornecedores" }]
+                      : []),
+                    ...suppliers.map((s) => ({ value: s.id, label: s.name })),
+                  ]}
+                  value={supplierId}
+                  onChange={setSupplierId}
+                  emptyMessage="Nenhum fornecedor encontrado"
+                />
+              )}
+
+              {/* Responsável — exclusivo do relatório de transações */}
+              {reportType === "transactions" && (
+                <Input
+                  value={responsibleName}
+                  onChange={(e) => setResponsibleName(e.target.value)}
+                  placeholder="Nome do responsável"
+                />
+              )}
+
+              {/* Forma de pagamento — exclusivo do relatório de transações */}
+              {reportType === "transactions" && (
+                <Select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  options={paymentMethodOptions}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -251,11 +361,11 @@ export default function ReportsPage() {
           </div>
         ) : (
           <div id="report-print">
-            {reportType === "monthly" && monthlyReport && (
+            {reportType === "monthly" && month && monthlyReport && (
               <ReportDocument
                 report={monthlyReport}
-                monthName={MONTHS[month - 1]}
-                prevMonthName={MONTHS_PREV[month - 1]}
+                monthName={MONTHS[Number(month) - 1]}
+                prevMonthName={MONTHS_PREV[Number(month) - 1]}
               />
             )}
             {reportType === "supplier" && supplierReport && (
@@ -263,6 +373,12 @@ export default function ReportsPage() {
             )}
             {reportType === "annual" && annualReport && (
               <AnnualReportDocument report={annualReport} />
+            )}
+            {reportType === "transactions" && transactionsReport && (
+              <TransactionsReportDocument
+                report={transactionsReport}
+                badgeLabel={buildTransactionsBadge()}
+              />
             )}
           </div>
         )}
