@@ -1,3 +1,4 @@
+import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { TransactionsList } from "@/components/transactions-list";
 import { transactionsService } from "@/services/transactions.service";
@@ -8,10 +9,9 @@ import Link from "next/link";
 export default async function DashboardPage() {
   const [summary, recentTransactions] = await Promise.all([
     transactionsService.getSummary(),
-    transactionsService.list({ limit: 5 }),
+    transactionsService.list({ limit: 10 }),
   ]);
 
-  // Oculta entradas vinculadas (linkedBy), igual à página de transações
   const visibleTransactions = (
     JSON.parse(JSON.stringify(recentTransactions)) as Transaction[]
   ).filter((t) => !t.linkedBy);
@@ -44,6 +44,9 @@ export default async function DashboardPage() {
           type="balance"
         />
       </div>
+
+      {/* Gráficos — client component com seletor de ano */}
+      <DashboardCharts />
 
       {/* Movimentações recentes */}
       <div className="mt-8">
