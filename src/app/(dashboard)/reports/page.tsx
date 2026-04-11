@@ -279,9 +279,8 @@ export default function ReportsPage() {
                   key={t}
                   variant="outline"
                   onClick={() => setReportType(t)}
-                  className={`rounded-md text-sm transition not-sm:flex-1 ${
-                    reportType === t &&
-                    "bg-primary! text-primary-foreground px-3 py-2"
+                  className={`rounded-md px-3 py-2 text-sm transition not-sm:flex-1 ${
+                    reportType === t && "bg-primary! text-primary-foreground"
                   }`}
                 >
                   {REPORT_LABELS[t]}
